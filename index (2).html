@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="cs"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matematický labyrint</title>
+<style>
+:root{--bg:#10251a;--card:#1d3b2a;--ink:#fffbe8;--acc:#ffc233;--ok:#4ade80;--bad:#f43f5e;--mut:#b7d9c0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS",Verdana,sans-serif;color-scheme:dark}
+h1{font-size:clamp(2rem,5vw,3.2rem);margin:.2em 0;color:var(--acc);text-shadow:0 3px 0 #6b4300}
+.scr{display:none;max-width:960px;margin:0 auto;padding:14px;text-align:center}.scr.on{display:block}
+button{font:inherit;font-weight:700;font-size:1.2rem;background:var(--acc);color:#2b1700;border:0;border-radius:14px;padding:12px 24px;margin:6px;cursor:pointer;box-shadow:0 4px 0 #8a5a00}
+button:hover{filter:brightness(1.1)}button.sec{background:#3f7a55;color:var(--ink);box-shadow:0 4px 0 #1f4430}
+.card{background:var(--card);border-radius:18px;padding:18px;margin:12px auto;max-width:640px;text-align:left}
+.chars{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:640px;margin:0 auto}
+.ch{border:5px solid transparent;border-radius:22px;padding:12px 6px;cursor:pointer;color:#2a2a2a;font-weight:700;font-size:1.05rem;transition:.15s;box-shadow:0 5px 0 #0004}
+.ch b{display:block;font-size:3.6rem;line-height:1.2}.ch:hover{transform:translateY(-5px)}
+.ch.sel{border-color:#fff;transform:scale(1.08);animation:bob 1s infinite;box-shadow:0 0 0 4px #fff8,0 8px 16px #0006}
+@keyframes bob{50%{transform:scale(1.08) translateY(-6px)}}
+.nb{max-width:520px;margin:18px auto;background:#fff;border:6px solid var(--acc);border-radius:20px;padding:12px 16px;color:#2b1700}
+.nb label{display:block;font-size:1.4rem;font-weight:700;margin-bottom:6px}
+.nb input{width:100%;font:inherit;font-size:1.8rem;padding:8px 12px;border:3px solid #cbd5c0;border-radius:12px;color:#222}
+.nb.err{border-color:var(--bad);background:#ffe9ee}.nb.err input{border-color:var(--bad)}
+#warn{display:none;color:var(--bad);font-weight:700;font-size:1.3rem;margin-top:6px}
+select{font:inherit;font-size:1.1rem;padding:6px 10px;border-radius:10px}
+label.r{display:block;margin:10px 0}
+#hud{display:flex;justify-content:space-between;align-items:center;font-size:1.4rem;margin-bottom:6px}
+#hearts span{margin:0 2px;display:inline-block}.pop{animation:pop .7s}
+@keyframes pop{30%{transform:scale(1.9) rotate(-15deg)}100%{transform:scale(1)}}
+#view{position:relative;border-radius:16px;overflow:hidden;border:4px solid #3f7a55;background:#000;max-height:calc(100vh - 150px)}
+#cv{width:100%;display:block;aspect-ratio:16/9}
+#mm{position:absolute;top:8px;right:8px;width:110px;border:2px solid #fff6;display:none}
+#mon{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#f43f5e44;cursor:pointer}
+#mon i{font-style:normal;font-size:clamp(4rem,16vw,9rem);animation:jump .5s}
+#mon p{position:absolute;left:4%;right:4%;top:4%;margin:0;background:#fffbe8;color:#3a1a00;border:4px solid var(--bad);border-radius:20px;padding:8px 14px;font-weight:700;font-size:clamp(1rem,2.4vw,1.5rem)}
+@keyframes jump{0%{transform:scale(.1)}70%{transform:scale(1.3)}100%{transform:scale(1)}}@keyframes jumpL{0%{transform:translateX(-400%)}70%{transform:translateX(-20%) scale(1.3)}100%{transform:translateX(-35%) scale(1.15)}}@keyframes jumpR{0%{transform:translateX(400%)}70%{transform:translateX(20%) scale(1.3)}100%{transform:translateX(35%) scale(1.15)}}@keyframes thaw{from{filter:blur(8px);opacity:.1}to{filter:none;opacity:1}}
+.shake{animation:sh .5s}@keyframes sh{20%{transform:translate(-12px,5px)}40%{transform:translate(12px,-5px)}60%{transform:translate(-8px,3px)}80%{transform:translate(8px,-3px)}}
+.ok{box-shadow:0 0 0 6px var(--ok)}
+#panel{position:absolute;left:0;right:0;bottom:0;padding:8px 10px 10px;background:linear-gradient(transparent,#06180dee 35%);visibility:hidden}
+#q{font-size:clamp(1.1rem,2.8vw,1.8rem);font-weight:700;margin:2px 0 6px;text-shadow:0 2px 4px #000}
+#opts{display:flex;gap:10px;justify-content:center}
+.opt{min-width:120px;background:#2f6d49;color:var(--ink);box-shadow:0 4px 0 #14341f;font-size:clamp(1.1rem,2.6vw,1.6rem);display:flex;flex-direction:column;align-items:center;padding:6px 18px;margin:0}
+.opt b{font-size:1.5rem;color:var(--acc)}
+.hint{color:var(--mut);font-size:.85rem;margin-top:4px}.opt{background:repeating-linear-gradient(90deg,#7b4a22 0 14px,#6a3e1b 14px 16px)!important;border:4px solid #3e2410!important;border-radius:60px 60px 8px 8px!important;color:#fff3d6!important;min-width:130px;padding:10px 18px!important;box-shadow:0 5px 0 #2a1808!important;text-shadow:0 2px 3px #000}.opt b{color:#ffd166!important}.opt.dooropen,.opt.dooropen b{color:transparent!important;text-shadow:none!important}.opt.dooropen{background:#0d0703!important;border-color:#ffd166!important}#mon{z-index:5}#panel{z-index:2}
+table{width:100%;border-collapse:collapse;font-size:1.15rem}td,th{padding:6px;border-bottom:1px solid #3f7a55;text-align:left}
+</style></head><body>
+
+<section id="menu" class="scr on">
+<h1>🏰 Matematický labyrint</h1>
+<p>Procenta, zlomky, rovnice a další. Najdi poklad v zahradě a nenech se chytit strašidly!</p>
+<button onclick="show('pick')">▶ Hrát</button><button class="sec" onclick="showLB()">🏆 Žebříček</button><button class="sec" onclick="show('set')">⚙️ Nastavení</button>
+<div class="card"><b>Jak se hraje</b><br>Vidíš zahradní labyrint očima své postavičky. Na křižovatce se objeví příklad a u každé cesty (←, ↑, →) jedna odpověď. Vyber cestu se správnou odpovědí šipkami nebo kliknutím. Špatná odpověď = vyskočí strašidlo a přijdeš o srdíčko.</div>
+</section>
+
+<section id="pick" class="scr">
+<h1>Vyber postavičku</h1>
+<div class="chars" id="chars"></div>
+<div class="nb" id="nb"><label for="name">Jak se jmenuješ?</label><input type="text" id="name" maxlength="14" placeholder="Sem napiš jméno"><div id="warn">❗ Napiš své jméno</div></div>
+<button onclick="tryStart()">Vyrazit do labyrintu!</button><button class="sec" onclick="show('menu')">Zpět</button>
+</section>
+
+<section id="topics" class="scr"><h1>Co chceš procvičovat?</h1><p>Vyber jednu nebo víc sad příkladů (učivo 7. třídy).</p><div class="chars" id="tops"></div><div id="twarn" style="color:#ff8a9b;font-weight:700;font-size:1.2rem;display:none;margin-top:10px">❗ Vyber aspoň jednu sadu</div><p><button onclick="startTopics()">Začít hru!</button><button class="sec" onclick="show('pick')">Zpět</button></p></section>
+<section id="game" class="scr">
+<div id="hud"><span id="me"></span><span id="hearts"></span><span id="tm">⏱ 0:00</span></div>
+<div id="view"><canvas id="cv" width="1280" height="720"></canvas><canvas id="mm"></canvas>
+<div id="mon"><i id="mi"></i><p id="mt"></p></div>
+<div id="panel"><div id="q"></div><div id="opts"></div><div class="hint">Šipky ← ↑ → nebo klik myší</div></div></div>
+<button class="sec" onclick="quit()">Ukončit hru</button>
+</section>
+
+<section id="res" class="scr">
+<h1 id="rt"></h1><div style="font-size:5rem" id="rc"></div><div style="font-size:3rem" id="rs"></div><p id="rx" style="font-size:1.3rem"></p><div id="rv"></div>
+<button onclick="newGame()">Hrát znovu</button><button class="sec" onclick="drawT();show('topics')">Změnit příklady</button><button class="sec" onclick="showLB(window.CURK)">Žebříček</button><button class="sec" onclick="show('menu')">Menu</button>
+</section>
+
+<section id="lb" class="scr"><h1>🏆 Nejlepší časy</h1><div class="card"><div id="lbnote" style="margin-bottom:8px;color:var(--mut)"></div><select id="lbsel" onchange="showLB(this.value)" style="width:100%;margin-bottom:10px"></select><table id="lbt"></table></div><button class="sec" onclick="show('menu')">Zpět</button></section>
+
+<section id="set" class="scr"><h1>⚙️ Nastavení učitele</h1>
+<div class="card" id="sf">
+<input type="checkbox" id="s_pct" hidden>
+<input type="checkbox" id="s_frac" hidden><p class="hint">Sady příkladů si hráč vybírá před hrou.</p>
+<label class="r">Obtížnost: <select id="s_diff"><option value="0">Lehká</option><option value="1">Střední</option><option value="2">Těžká</option></select></label>
+<label class="r">Počet životů: <select id="s_lives"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+<label class="r">Velikost labyrintu: <select id="s_size"><option value="5">Malý</option><option value="6">Střední</option><option value="8">Velký</option></select></label>
+<label class="r"><input type="checkbox" id="s_mini"> Minimapa jako nápověda</label>
+<label class="r"><input type="checkbox" id="s_snd"> Zvuky (včetně kroků)</label>
+<label class="r"><input type="checkbox" id="s_bob"> Pohupování pohledu při chůzi</label>
+<label class="r"><input type="checkbox" id="s_mon"> Strašidla</label>
+<label class="r"><input type="checkbox" id="s_sol"> Na konci ukázat rozbor chyb (rozmrazení)</label>
+</div><button onclick="show('menu')">Hotovo</button></section>
+
+<script>
+const $=s=>document.querySelector(s),R=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),pick=a=>a[R(0,a.length-1)];
+const shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+const gcd=(a,b)=>b?gcd(b,a%b):a,fmt=n=>String(+n.toFixed(2)).replace('.',',');
+const fr=(n,d)=>{const g=gcd(n,d);n/=g;d/=g;return d==1?''+n:n+'/'+d};
+const DX=[0,1,0,-1],DY=[-1,0,1,0],sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const CH=[['🧙‍♀️','Čarodějnice','#ff8fab'],['🤺','Rytíř','#ffd166'],['🐱','Kočka','#95e8c4'],['🤖','Robot','#7cc6fe'],['👩‍🚀','Astronaut','#ffa45c'],['🐉','Drak','#b794f6']];
+let S={pct:true,frac:true,diff:1,lives:3,size:6,mini:false,snd:true,bob:true,mon:true,sol:true},ME={n:'',c:0,t:['pct','frac']},LB=[];
+try{Object.assign(S,JSON.parse(localStorage.getItem('ml_s')||'{}'));Object.assign(ME,JSON.parse(localStorage.getItem('ml_me')||'{}'));LB=JSON.parse(localStorage.getItem('ml_lb')||'[]')}catch(e){}
+const FB='https://labyrint-f27dc-default-rtdb.europe-west1.firebasedatabase.app';/* sem vlož adresu Firebase databáze, např. https://nazev-default-rtdb.europe-west1.firebasedatabase.app */
+let SH=[],DBOK=false;const LBX=()=>DBOK?SH:LB;
+async function fbLoad(){if(!FB)return;try{const r=await fetch(FB.replace(/\/$/,'')+'/scores.json?orderBy=%22s%22&limitToFirst=300');if(!r.ok)throw 0;const o=await r.json()||{};SH=Object.values(o).filter(x=>x&&x.n&&typeof x.s=='number');DBOK=true}catch(e){}if($('#lb').classList.contains('on'))showLB($('#lbsel').value,1)}
+function postScore(e){if(!FB)return;try{fetch(FB.replace(/\/$/,'')+'/scores.json',{method:'POST',body:JSON.stringify(Object.assign({},e,{ts:Date.now()}))}).then(()=>setTimeout(fbLoad,600)).catch(()=>{})}catch(x){}}
+fbLoad();
+const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+function show(id){document.querySelectorAll('.scr').forEach(e=>e.classList.toggle('on',e.id==id))}
+const sk=['pct','frac','mini','snd','bob','mon','sol'];
+function loadS(){sk.forEach(k=>$('#s_'+k).checked=S[k]);['diff','lives','size'].forEach(k=>$('#s_'+k).value=S[k])}
+$('#sf').onchange=()=>{sk.forEach(k=>S[k]=$('#s_'+k).checked);['diff','lives','size'].forEach(k=>S[k]=+$('#s_'+k).value);if(!S.pct&&!S.frac){S.pct=S.frac=true;loadS()}store('ml_s',S)};loadS();
+$('#chars').innerHTML=CH.map((c,i)=>`<div class="ch" style="background:${c[2]}" data-i="${i}"><b>${c[0]}</b>${c[1]}</div>`).join('');
+function selCh(){document.querySelectorAll('.ch').forEach(e=>e.classList.toggle('sel',+e.dataset.i==ME.c))}
+$('#chars').onclick=e=>{const c=e.target.closest('.ch');if(c){ME.c=+c.dataset.i;selCh()}};selCh();$('#name').value=ME.n;
+$('#name').oninput=()=>{$('#nb').classList.remove('err','shake');$('#warn').style.display='none'};
+function tryStart(){if(!$('#name').value.trim()){const b=$('#nb');b.classList.remove('shake');void b.offsetWidth;b.classList.add('err','shake');$('#warn').style.display='block';$('#name').focus();return}ME.n=$('#name').value.trim().slice(0,14);drawT();show('topics')}
+let AC;function beep(f,d,t='sine',v=.12){if(!S.snd)return;try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+// příklady
+function mk(a,w,n){w=[...new Set(w.map(String))].filter(x=>x!==a&&!/^-|^0( %)?$/.test(x));return{a,o:[a,...shuf(w).slice(0,n-1)]}}
+const P=v=>fmt(v)+' %';
+const GEN={
+part(d,n){const p=pick([[10,50],[5,10,20,25,50,75],[5,15,30,35,40,60,45,95]][d]),b=20*R(1,[6,10,25][d]),a=p*b/100;
+ return{q:`Kolik je ${p} % z ${b}?`,...mk(fmt(a),[b-a,a*2,a+10,a-5,a*10,a/10].map(fmt),n)}},
+what(d,n){const p=pick([[10,50,25],[5,10,20,25,50,75],[5,15,30,35,40,60,45,95]][d]),b=20*R(1,[6,10,20][d]),a=p*b/100;
+ return{q:`Kolik procent je ${a} z ${b}?`,...mk(P(p),[P(p+10),P(p-10),P(100-p),P(p+5),P(p*2)],n)}},
+base(d,n){const p=pick([[10,50],[10,20,25,50],[5,10,20,25,40,50]][d]),b=20*R(1,[8,12,20][d]),a=p*b/100;
+ return{q:`Číslo ${a} je ${p} % z jistého čísla. Jaké je to číslo?`,...mk(fmt(b),[a*2,b+20,b-20,a*10,a+p,b*2],n)}},
+addsub(d,n){const[d1,d2]=pick([[[4,4],[5,5],[8,8],[10,10]],[[4,8],[5,10],[3,6],[6,12]],[[2,3],[3,4],[2,5],[3,5],[4,6]]][d]);
+ const a=R(1,d1-1),b=R(1,d2-1),sub=Math.random()<.4&&a*d2>b*d1,nu=sub?a*d2-b*d1:a*d2+b*d1,de=d1*d2;
+ return{q:`${a}/${d1} ${sub?'−':'+'} ${b}/${d2} =`,...mk(fr(nu,de),[fr(sub?a-b:a+b,d1+d2),fr(nu+1,de),fr(nu,de+d1),fr(nu,de*2),fr(a*b,de)],n)}},
+simp(d,n){const q=pick([2,3,4,5,7,9]),p=pick([1,2,3,4,5,7,8].filter(x=>x<q&&gcd(x,q)==1)),k=pick([[2,3,4],[3,4,5,6],[6,8,9,12]][d]);
+ return{q:`Zkrať zlomek ${p*k}/${q*k} na základní tvar.`,...mk(fr(p,q),[`${p}/${q*k}`,`${p*k}/${q}`,fr(p+1,q),fr(p,q+1),fr(p+k,q+k)],n)}},
+conv(d,n){if(d==2&&Math.random()<.5){const x=pick([5,15,20,25,35,40,60,75,80]);return{q:`Zapiš ${x} % jako zlomek v základním tvaru.`,...mk(fr(x,100),[fr(x,10),fr(x,1000),fr(100,x),fr(x,50),fr(x+10,100)],n)}}
+ if(Math.random()<.4){const x=pick([5,10,20,25,30,35,40,45,60,75,80]);return{q:`Zapiš ${fmt(x/100)} jako procento.`,...mk(P(x),[P(x/10),P(x*10),P(x/100),P(x+10),P(100-x)],n)}}
+ const dn=pick([[2,4,5,10],[2,4,5,10,20,25],[4,5,8,20,25,50]][d]),p=R(1,dn-1),v=100*p/dn;
+ return{q:`Kolik procent je zlomek ${p}/${dn}?`,...mk(P(v),[P(v+10),P(p*dn),P(100-v),P(v*2),P(v/2),P(v+5)],n)}},
+cmp(d,n){let f;do{f=[];for(let i=0;i<n;i++){const de=R(2,[8,10,12][d]);f.push([R(1,de-1),de])}}while(new Set(f.map(x=>(x[0]/x[1]).toFixed(5))).size<n);
+ const big=Math.random()<.5,s=[...f].sort((x,y)=>x[0]/x[1]-y[0]/y[1]),t=big?s[n-1]:s[0];
+ return{q:`Který zlomek je ${big?'největší':'nejmenší'}: ${f.map(x=>x[0]+'/'+x[1]).join(' nebo ')}?`,a:t[0]+'/'+t[1],o:f.map(x=>x[0]+'/'+x[1]),fixed:1}}};
+const sg=v=>v<0?'−'+(-v):''+v,mk2=(a,w,n)=>{w=[...new Set(w.map(String))].filter(x=>x!==a);return{a,o:[a,...shuf(w).slice(0,n-1)]}};const TOPICS={pct:['📊','Procenta','#ffd166'],frac:['🍕','Zlomky','#ff8fab'],eq:['⚖️','Rovnice','#95e8c4'],int:['🌡️','Celá čísla','#7cc6fe'],ratio:['🧮','Poměr a úměrnost','#ffa45c'],geo:['📐','Úhly a obvody','#b794f6']},TG={pct:['part','what','base'],frac:['addsub','simp','conv','cmp'],eq:['eq'],int:['int','int','intc'],ratio:['ratio','prop','split'],geo:['angle','rect','tri']};const kl=x=>x.split('+').map(t=>TOPICS[t]?TOPICS[t][0]+' '+TOPICS[t][1]:t).join(' + '),icons=x=>(x||'').split('+').map(t=>TOPICS[t]?TOPICS[t][0]:'').join('');ME.t=(ME.t||[]).filter(t=>TOPICS[t]);if(!ME.t.length)ME.t=['pct','frac'];Object.assign(GEN,{eq(d,n){const x=R(1,12),a=R(2,9),b=R(1,20),X=v=>'x = '+sg(v);if(d==0){if(Math.random()<.5)return{q:`x + ${b} = ${x+b}`,...mk2(X(x),[x+b,x+1,x-1,b,x+b+b].map(X),n)};return{q:`x − ${b} = ${x}`,...mk2(X(x+b),[x,x-b,x+b+1,x+b-1,b].map(X),n)}}if(d==1){if(Math.random()<.5)return{q:`${a}x = ${a*x}`,...mk2(X(x),[a*x,x+1,x-1,a,x+a].map(X),n)};return{q:`x : ${a} = ${x}`,...mk2(X(a*x),[x+a,x,a,a*x+a,a*x-a].map(X),n)}}if(Math.random()<.5)return{q:`${a}x + ${b} = ${a*x+b}`,...mk2(X(x),[a*x,x+1,x-1,x+b,a*x+b-a].map(X),n)};return{q:`${a}x − ${b} = ${sg(a*x-b)}`,...mk2(X(x),[a*x,x+1,x-1,x+b,a*x-b+a].map(X),n)}},int(d,n){const m=[10,20,40][d];let a=R(2,m),b=R(2,m),q,r;const k=R(0,[1,3,5][d]);if(k==0){q=`${a} − ${b}`;r=a-b}else if(k==1){q=`(−${a}) + ${b}`;r=b-a}else if(k==2){q=`(−${a}) − ${b}`;r=-a-b}else if(k==3){q=`${a} − (−${b})`;r=a+b}else if(k==4){a=R(2,9);b=R(2,9);q=`(−${a}) · ${b}`;r=-a*b}else{a=R(2,9);b=R(2,9);q=`(−${a*b}) : (−${b})`;r=a}return{q:q+' =',...mk2(sg(r),[r+1,r-1,-r,a+b,a-b,b-a,r+2].map(sg),n)}},intc(d,n){let v;do{v=Array.from({length:n},()=>R(-12,12))}while(new Set(v).size<n);const big=Math.random()<.5,t=big?Math.max(...v):Math.min(...v);return{q:`Které číslo je ${big?'největší':'nejmenší'}: ${v.map(sg).join(' nebo ')}?`,a:sg(t),o:v.map(sg),fixed:1}},ratio(d,n){const[p,q]=pick([[1,2],[1,3],[2,3],[3,4],[2,5],[3,5],[4,5],[1,4]]),k=pick([[2,3,4],[3,4,5,6],[6,8,9,12]][d]);return{q:`Zkrať poměr ${p*k} : ${q*k}.`,...mk2(`${p} : ${q}`,[`${p*k} : ${q}`,`${p} : ${q*k}`,`${q} : ${p}`,`${p+1} : ${q}`,`${p} : ${q+1}`],n)}},prop(d,n){const a=R(2,9),u=R(2,[9,15,25][d]),b=pick([2,3,4,5,6,7,8,9,10,12].filter(x=>x!=a)),[un,th]=pick([['kg','jablek'],['m','látky'],['l','mléka']]);return{q:`${a} ${un} ${th} stojí ${a*u} Kč. Kolik Kč stojí ${b} ${un} ${th}?`,...mk2(`${b*u} Kč`,[a*u+(b-a),a*b,b*u+u,b*u-u,a*u+b].map(v=>v+' Kč'),n)}},split(d,n){const[p,q]=pick([[1,2],[2,3],[3,4],[2,5],[1,3],[3,5]]),k=pick([[2,3,4,5],[4,5,6,8],[6,8,10,12]][d]),t=k*(p+q),big=k*Math.max(p,q);return{q:`Rozděl ${t} v poměru ${p} : ${q}. Jak velký je větší díl?`,...mk2(String(big),[k*Math.min(p,q),fmt(t/2),t-k,big+k,big-k,t].map(String),n)}},angle(d,n){if(Math.random()<.5){const a=5*R(4,16),b=5*R(4,16);return{q:`Dva úhly trojúhelníku mají ${a}° a ${b}°. Jak velký je třetí úhel?`,...mk2(`${180-a-b}°`,[360-a-b,a+b,180-a,180-b,200-a-b].map(v=>v+'°'),n)}}const a=5*R(3,32);return{q:`Vedlejší úhel k úhlu ${a}° má velikost:`,...mk2(`${180-a}°`,[a,360-a,180+a,a+90,Math.abs(a-90)].map(v=>v+'°'),n)}},rect(d,n){const a=R(3,[10,15,25][d]),b=R(2,[9,12,20][d]);if(Math.random()<.5)return{q:`Obdélník má strany ${a} cm a ${b} cm. Jaký je jeho obvod?`,...mk2(`${2*(a+b)} cm`,[a*b,a+b,2*a*b,2*a+b,a+2*b].map(v=>v+' cm'),n)};return{q:`Obdélník má strany ${a} cm a ${b} cm. Jaký je jeho obsah?`,...mk2(`${a*b} cm²`,[2*(a+b),a+b,a*b*2,a*b+a,a*b-b].map(v=>v+' cm²'),n)}},tri(d,n){const a=2*R(2,[6,9,14][d]),h=R(3,[8,12,18][d]);return{q:`Trojúhelník má základnu ${a} cm a výšku ${h} cm. Jaký je jeho obsah?`,...mk2(`${a*h/2} cm²`,[a*h,a+h,a*h/2+a,a*h/4,2*(a+h)].map(v=>fmt(v)+' cm²'),n)}}});GEN.eq2=(d,n)=>{const x=R(1,12),a=R(2,9),b=R(1,15),X=v=>'x = '+sg(v),t=R(0,2);if(t==0)return{q:`Myslím si číslo. Když ho vynásobím ${a} a přičtu ${b}, dostanu ${a*x+b}. Které číslo si myslím?`,...mk2(String(x),[x+1,x-1,a*x,x+b,a*x+b-a].map(String),n)};if(t==1)return{q:`${a}(x + ${b}) = ${a*(x+b)}`,...mk2(X(x),[x+b,a*x,x+1,x-1,a*(x+b)-b].map(X),n)};return{q:`${a}x + x = ${(a+1)*x}`,...mk2(X(x),[a*x,x+1,x-1,a+1,x+a].map(X),n)}};TG.eq.push('eq2');function genQ(n){if(!G.bag||!G.bag.length)G.bag=shuf([...ME.t]);const t=G.bag.pop(),ks=TG[t].filter(k=>k!=G.lastK),k=pick(ks.length?ks:TG[t]);G.lastK=k;return GEN[k](S.diff,n)}function drawT(){$('#tops').innerHTML=Object.keys(TOPICS).map(k=>`<div class="ch${ME.t.includes(k)?' sel':''}" data-k="${k}" style="background:${TOPICS[k][2]}"><b>${TOPICS[k][0]}</b>${TOPICS[k][1]}</div>`).join('')}drawT();$('#tops').onclick=e=>{const c=e.target.closest('.ch');if(c){const k=c.dataset.k;ME.t=ME.t.includes(k)?ME.t.filter(x=>x!=k):[...ME.t,k];drawT();$('#twarn').style.display='none'}};function startTopics(){if(!ME.t.length){$('#twarn').style.display='block';return}store('ml_me',ME);newGame()}
+// bludiště: dlouhé chodby, málo odboček, max. 2 možnosti na křižovatce
+function maze(N){const T=2*N+1,g=Array.from({length:T},()=>Array(T).fill(1)),dg=Array.from({length:T},()=>Array(T).fill(0)),seen={},st=[[1,1,-1]];g[1][1]=0;seen['1,1']=1;
+ while(st.length){const[x,y,ld]=st[st.length-1],nb=[];
+  for(let d=0;d<4;d++){const nx=x+DX[d]*2,ny=y+DY[d]*2;if(nx>0&&ny>0&&nx<T-1&&ny<T-1&&!seen[nx+','+ny])nb.push(d)}
+  if(!nb.length||dg[y][x]>=4||(dg[y][x]>=2&&Math.random()>.15)){st.pop();continue}
+  const d=nb.includes(ld)&&Math.random()<.25?ld:pick(nb),nx=x+DX[d]*2,ny=y+DY[d]*2;
+  g[y+DY[d]][x+DX[d]]=0;g[ny][nx]=0;seen[nx+','+ny]=1;dg[y][x]++;dg[ny][nx]++;st.push([nx,ny,d])}
+ return g}
+function bfs(g,sx,sy){const T=g.length,D=Array.from({length:T},()=>Array(T).fill(-1));D[sy][sx]=0;const q=[[sx,sy]];
+ for(let i=0;i<q.length;i++){const[x,y]=q[i];for(let d=0;d<4;d++){const nx=x+DX[d],ny=y+DY[d];if(g[ny][nx]==0&&D[ny][nx]<0){D[ny][nx]=D[y][x]+1;q.push([nx,ny])}}}return D}
+// hra
+let G=null;const cv=$('#cv'),ctx=cv.getContext('2d');
+function newGame(){ME.n=$('#name').value.trim().slice(0,14)||ME.n||'Hráč';store('ml_me',ME);
+ const g=maze(S.size),D=bfs(g,1,1);let gx=1,gy=1,m=0;D.forEach((r,y)=>r.forEach((v,x)=>{if(v>m){m=v;gx=x;gy=y}}));
+ const f=g[1][2]==0?1:2;
+ if(G)clearInterval(G.iv);
+ G={g,dg:bfs(g,gx,gy),gx,gy,x:1.5,y:1.5,f,a:(f-1)*Math.PI/2,lives:S.lives,t0:Date.now(),dead:false,lost:-1,ph:0,amp:0,walking:false,lx:1.5,ly:1.5,ls:0,errs:[]};
+ $('#me').textContent=CH[ME.c][0]+' '+ME.n+' '+ME.t.map(t=>TOPICS[t][0]).join('');hearts();$('#panel').style.visibility='hidden';$('#mon').style.display='none';
+ $('#mm').style.display=S.mini?'block':'none';show('game');
+ G.iv=setInterval(()=>{if(G&&!G.dead){const s=Math.floor((Date.now()-G.t0)/1000);$('#tm').textContent='⏱ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}},250);
+ loop();run()}
+function quit(){if(G){G.dead=true;clearInterval(G.iv)}show('menu')}
+function hearts(broken){$('#hearts').innerHTML=Array.from({length:S.lives},(_,i)=>i<G.lives?'<span>❤️</span>':`<span class="${i==G.lost&&broken?'pop':''}">${i==G.lost&&broken?'💔':'🖤'}</span>`).join('')}
+function loop(){if(!G||G.dead)return;const dd=Math.abs(G.x-G.lx)+Math.abs(G.y-G.ly);G.lx=G.x;G.ly=G.y;if(dd>0&&dd<1){G.ph+=dd;if(Math.floor(G.ph)!=G.ls){G.ls=Math.floor(G.ph);beep(95+R(0,25),.07,'triangle',.1)}}G.amp+=((G.walking&&S.bob?1:0)-G.amp)*.25;render();requestAnimationFrame(loop)}
+const anim=(ms,fn,lin)=>new Promise(r=>{const t0=performance.now();(function s(t){const k=Math.min(1,(t-t0)/ms);fn(lin?k:k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2);k<1?requestAnimationFrame(s):r()})(t0)});
+async function go(d){const t=(d-1)*Math.PI/2,a0=G.a,da=((t-a0)%(2*Math.PI)+3*Math.PI)%(2*Math.PI)-Math.PI;
+ if(Math.abs(da)>.01)await anim(320,k=>G.a=a0+da*k);G.a=a0+da;G.f=d;const x0=G.x,y0=G.y;let last=0;G.walking=true;
+ await anim(680,k=>{G.x=x0+DX[d]*2*k;G.y=y0+DY[d]*2*k;const p=Math.floor(G.ph+k*2-(last?0:0));},true).catch(()=>0);
+ G.x=x0+DX[d]*2;G.y=y0+DY[d]*2;G.walking=false}
+// kroky: fáze se zvyšuje podle ušlé vzdálenosti
+const _go=go;const _unused=async function(d){const x0=G.x,y0=G.y,wasStep=Math.floor(G.ph);let tick;
+ tick=setInterval(()=>{if(!G||G.dead)return clearInterval(tick);const dd=Math.abs(G.x-x0)+Math.abs(G.y-y0);G.ph=G.ph0+dd;if(Math.floor(G.ph)!=G.lastStep){G.lastStep=Math.floor(G.ph);if(G.walking)beep(95+R(0,25),.07,'triangle',.1)}},16);
+ G.ph0=G.ph;G.lastStep=Math.floor(G.ph);await _go(d);clearInterval(tick);G.ph=G.ph0+2};
+function nextDir(){const cx=G.x|0,cy=G.y|0;for(let d=0;d<4;d++)if(G.g[cy+DY[d]][cx+DX[d]]==0&&G.dg[cy+DY[d]][cx+DX[d]]<G.dg[cy][cx])return d}
+function opts(){const cx=G.x|0,cy=G.y|0,f=G.f;return[['L',(f+3)%4,'←'],['F',f,'↑'],['R',(f+1)%4,'→']].filter(o=>G.g[cy+DY[o[1]]][cx+DX[o[1]]]==0).map(o=>({r:o[0],d:o[1],ar:o[2]}))}
+async function run(){while(!G.dead){const cx=G.x|0,cy=G.y|0;if(cx==G.gx&&cy==G.gy)return end(true);
+ const o=opts();if(o.length<=1){if(G.since>=1&&!(cx==1&&cy==1)){G.since=0;const gd=await ask(null);if(G.dead)return;if(gd==null)return end(false);await go(gd);continue}G.since=(G.since||0)+1;await go(o.length?o[0].d:nextDir());continue}G.since=0;
+ const d=await ask(null);if(G.dead)return;if(d==null)return end(false);await go(d)}}
+async function ask(o){const cd=nextDir();if(!o){o=shuf([{d:cd},{d:-1},{d:-2}]);o.forEach((x,i)=>{x.r='LFR'[i];x.ar='←↑→'[i]})}if(o.length==2){const ms='LFR'.split('').find(x=>!o.some(y=>y.r==x));o.push({r:ms,d:-1,ar:{L:'←',F:'↑',R:'→'}[ms]});o.sort((a,b)=>'LFR'.indexOf(a.r)-'LFR'.indexOf(b.r))}const ci=o.findIndex(x=>x.d==cd);
+ while(true){const q=genQ(o.length);let ans;
+  if(q.fixed){ans=shuf(q.o);const i=ans.indexOf(q.a);[ans[i],ans[ci]]=[ans[ci],ans[i]]}
+  else{const w=q.o.slice(1);let wi=0;ans=o.map((_,i)=>i==ci?q.a:w[wi++])}
+  $('#q').textContent=q.q;$('#opts').innerHTML=o.map((x,i)=>`<button class="opt" data-r="${x.r}"><b>${x.ar}</b><span>${ans[i]}</span></button>`).join('');
+  $('#panel').style.visibility='visible';G.allowed=o.map(x=>x.r);
+  const r=await new Promise(res=>G.pick=res);if(G.dead)return;$('#panel').style.visibility='hidden';
+  if(r==o[ci].r){beep(660,.12);setTimeout(()=>beep(880,.15),90);$('#view').classList.add('ok');setTimeout(()=>$('#view').classList.remove('ok'),300);return cd}
+  await wrong(q,r);if(G.dead)return;if(G.lives<=0)return null}}
+async function wrong(q,r){G.errs.push({q:q.q,a:q.a});G.lost=G.lives-1;G.lives--;hearts(true);beep(110,.5,'sawtooth');
+ $('#view').classList.remove('shake');void $('#view').offsetWidth;$('#view').classList.add('shake');
+ $('#mi').textContent=S.mon?pick(['👻','🦇','🕷️','👹','🐍','🧟']):'💔';$('#mt').textContent=pick(['Bú! Tudy cesta nevede!','Ups! Tohle strašidlo tě přistihlo.','Ha! Ta odpověď nebyla ono. Zkus to znovu!','Pozor, strašidlo! Spočítej to ještě jednou.','Hmm, tady to nevyšlo. Nevzdávej to!']);const mi=$('#mi'),btn=document.querySelector('.opt[data-r="'+r+'"]'),vr=$('#view').getBoundingClientRect();$('#panel').style.visibility='visible';let sx=vr.width/2,sy=vr.height*.8;if(btn){btn.classList.add('dooropen');const br=btn.getBoundingClientRect();sx=br.left+br.width/2-vr.left;sy=br.top+br.height/2-vr.top}const tx=vr.width/2+(sx-vr.width/2)*.45,ty=vr.height*.42;mi.style.animation='none';mi.style.position='absolute';mi.style.left='0';mi.style.top='0';mi.animate([{transform:`translate(${sx}px,${sy}px) translate(-50%,-50%) scale(.1)`},{transform:`translate(${tx}px,${ty}px) translate(-50%,-50%) scale(1.5)`}],{duration:450,delay:250,easing:'cubic-bezier(.2,1.4,.4,1)',fill:'both'});$('#mon').style.display='flex';
+ await Promise.race([sleep(2800),new Promise(r=>G.skip=r)]);G.skip=null;$('#panel').style.visibility='hidden';$('#mon').style.display='none';$('#view').classList.remove('shake');hearts(false)}
+function pk(r){if(G&&G.pick&&G.allowed.includes(r)){const p=G.pick;G.pick=null;p(r)}}
+$('#opts').onclick=e=>{const b=e.target.closest('.opt');if(b)pk(b.dataset.r)};
+$('#mon').onclick=()=>{if(G&&G.skip)G.skip()};
+addEventListener('keydown',e=>{if(G&&G.skip){G.skip();return}const m={ArrowLeft:'L',ArrowUp:'F',ArrowRight:'R'}[e.key];if(m&&$('#game').classList.contains('on')){e.preventDefault();pk(m)}});
+function end(win){G.dead=true;clearInterval(G.iv);const s=Math.floor((Date.now()-G.t0)/1000),tt=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+ $('#rc').textContent=CH[ME.c][0];const er=G.errs;window.ERR=er;$('#rv').innerHTML=S.sol&&er.length?`<button class="sec" onclick="thaw()">🧊 Rozmrazit chyby (${er.length})</button><div id="rl" class="card" style="display:none"></div>`:(er.length?'':'<b>✨ Bez jediné chyby!</b>');
+ if(win){let st=1;if(G.lives>=Math.ceil(S.lives/2))st++;if(s<S.size*S.size*6)st++;
+  const e={n:ME.n,c:ME.c,s,st,sz:S.size,k:ME.t.slice().sort().join('+')};LB.push(e);LB.sort((a,b)=>a.s-b.s);LB=LB.slice(0,300);store('ml_lb',LB);postScore(e);const rk=LB.filter(r=>r.k==e.k).indexOf(e)+1;window.CURK=e.k;
+  $('#rt').textContent='🎉 Máš poklad!';$('#rs').textContent='⭐'.repeat(st)+'☆'.repeat(3-st);
+  $('#rx').innerHTML=`${ME.n.replace(/</g,'&lt;')}, čas ${tt}, zbylá srdíčka: ${G.lives}<br><b>${rk&&rk<=10?`Jsi ${rk}. nejrychlejší v sadě ${kl(e.k)}!`:'Tentokrát jsi mimo první desítku, zkus to znovu!'}</b>`;
+  beep(523,.2);setTimeout(()=>beep(784,.3),200)}
+ else{$('#rt').textContent='💀 Došly životy';$('#rs').textContent='';$('#rx').textContent='Strašidla byla rychlejší. Zkus to znovu!'}
+ show('res')}
+function thaw(){const l=$('#rl');l.style.display='block';l.innerHTML='<b>🧊 Rozmrazené chyby: tady se dá nejvíc naučit!</b>'+window.ERR.map((e,i)=>`<div style="padding:8px 0;border-bottom:1px solid #3f7a55;animation:thaw .9s ${i*.35}s both"><span style="color:#ffb3c0">Příklad:</span> ${e.q}<br><b style="color:var(--ok)">Správný výsledek: ${e.a}</b></div>`).join('')}function showLB(k,nl){if(!nl)fbLoad();const sel=$('#lbsel'),ks=[...new Set(LBX().map(r=>r.k).filter(Boolean))];sel.innerHTML='<option value="">🏆 Společný žebříček (všechny sady)</option>'+ks.map(x=>`<option value="${x}">${kl(x)}</option>`).join('');sel.value=k||'';const L=(sel.value?LBX().filter(r=>r.k==sel.value):LBX()).slice().sort((a,b)=>a.s-b.s);$('#lbnote').textContent=DBOK?'🌍 Společný žebříček všech hráčů':'📱 Žebříček jen na tomto zařízení';$('#lbt').innerHTML='<tr><th>#</th><th></th><th>Jméno</th><th>Čas</th><th>Hvězdy</th></tr>'+(L.length?L.slice(0,10).map((r,i)=>`<tr><td>${i+1}</td><td>${CH[r.c][0]}</td><td>${r.n.replace(/</g,'&lt;')} <small>${icons(r.k)}</small></td><td>${Math.floor(r.s/60)}:${String(r.s%60).padStart(2,'0')}</td><td>${'⭐'.repeat(r.st)}</td></tr>`).join(''):'<tr><td colspan=5>Zatím nikdo nedošel do cíle.</td></tr>');show('lb')}
+// vykreslení: živý plot
+const hh=(a,b,c,d)=>{let x=(a*374761393+b*668265263+c*2147483647+d*1274126177)|0;x=Math.imul(x^(x>>>13),1274126177);return(x^(x>>>16))>>>0};
+const FL=['#ffffff','#ffe14d','#ff8fc0','#fff3a0'];const PAL=[[232,115,122],[242,184,75],[110,198,164],[111,168,220],[181,139,224],[240,138,75],[124,207,106],[232,111,166]];
+function render(){const W=cv.width,H=cv.height,c=ctx,g=G.g,fov=Math.PI/3,cols=W/2,zb=[];
+ const hz=H/2-Math.abs(Math.sin(G.ph*Math.PI))*H*.05*G.amp,ang=G.a+Math.sin(G.ph*Math.PI/2)*.03*G.amp;
+ let gr=c.createLinearGradient(0,0,0,hz);gr.addColorStop(0,'#5fb8f0');gr.addColorStop(1,'#d8f1ff');c.fillStyle=gr;c.fillRect(0,0,W,hz+1);
+ c.fillStyle='#fff';for(let k=0;k<5;k++){const s=W/640,x=((k*260*s-G.a*320)%(W+400)+W+400)%(W+400)-200,y=(26+k*14)*s;c.beginPath();c.ellipse(x,y,70*s,22*s,0,0,7);c.ellipse(x+42*s,y-12*s,48*s,22*s,0,0,7);c.ellipse(x-36*s,y-6*s,36*s,18*s,0,0,7);c.fill()}for(let k=0;k<10;k++){const s=W/640,x=((k*190*s-G.a*420)%(W+300)+W+300)%(W+300)-150,r=(30+(k*7%5)*7)*s;c.fillStyle='#8a5a2b';c.fillRect(x-4*s,hz-r*.5,8*s,r*.6);c.fillStyle=k%2?'#58b85a':'#7ccf6a';c.strokeStyle='#2e6b2e';c.lineWidth=3*s;c.beginPath();c.arc(x,hz-r*.9,r,0,7);c.fill();c.stroke()}
+ gr=c.createLinearGradient(0,hz,0,H);gr.addColorStop(0,'#a8d86a');gr.addColorStop(1,'#4c8f2e');c.fillStyle=gr;c.fillRect(0,hz,W,H-hz);
+ for(let k=-2;k<12;k+=2){const o=(G.ph*.6)%2,a=Math.max(0,(k+o)/12),b=Math.max(0,(k+1+o)/12);c.fillStyle='rgba(255,255,255,.1)';c.fillRect(0,hz+(H-hz)*a*a,W,(H-hz)*(b*b-a*a))}c.fillStyle='rgba(160,110,60,.55)';c.beginPath();c.moveTo(W*.42,hz);c.lineTo(W*.58,hz);c.lineTo(W*.9,H);c.lineTo(W*.1,H);c.fill();
+ for(let i=0;i<cols;i++){const ra=ang+Math.atan((i/cols-.5)*2*Math.tan(fov/2)),dx=Math.cos(ra),dy=Math.sin(ra);
+  let mx=G.x|0,my=G.y|0,sx,sy,sdx,sdy;const ddx=Math.abs(1/dx),ddy=Math.abs(1/dy);
+  if(dx<0){sx=-1;sdx=(G.x-mx)*ddx}else{sx=1;sdx=(mx+1-G.x)*ddx}if(dy<0){sy=-1;sdy=(G.y-my)*ddy}else{sy=1;sdy=(my+1-G.y)*ddy}
+  let side=0;while(g[my][mx]==0){if(sdx<sdy){sdx+=ddx;mx+=sx;side=0}else{sdy+=ddy;my+=sy;side=1}}
+  const rd=side?sdy-ddy:sdx-ddx,d=Math.max(.05,rd*Math.cos(ra-ang)),wx=side?G.x+rd*dx:G.y+rd*dy,f=wx-Math.floor(wx);zb[i]=d;
+  const h=Math.min(H*3,H/d*.8),y0=hz-h/2,sh=Math.max(.6,1/(1+d*.12)),b=PAL[hh(mx,my,0,7)%8].map(x=>x*(side?1:.8)),v=sh*1.08;
+  c.fillStyle=`rgb(${b[0]*v|0},${b[1]*v|0},${b[2]*v|0})`;c.fillRect(i*2,y0,2,h);
+  const hl=hh(mx,my,side,i>>1);c.fillStyle=`rgba(255,255,255,0)`;for(let k=0;k<3;k++)c.fillRect(i*2,y0+h*((hl>>(k*4))%100)/100,2,Math.max(2,h*.02));
+  c.fillStyle=`rgba(60,30,10,0)`;for(let k=3;k<5;k++)c.fillRect(i*2,y0+h*((hl>>(k*3))%100)/100,2,Math.max(2,h*.025));
+  c.fillStyle='rgba(110,70,30,.9)';c.fillRect(i*2,y0,2,h*.07);c.fillRect(i*2,y0+h*.92,2,h*.08);
+  const s5=Math.floor(f*5),hf=hh(mx,my,side,s5+100),lo=(f*5)%1;
+  c.fillStyle='#3a2314';const tk=Math.max(3,H*.009);c.fillRect(i*2,y0-tk/2,2,tk);c.fillRect(i*2,y0+h-tk/2,2,tk);if(Math.min(f,1-f)<.025+.01*d)c.fillRect(i*2,y0,2,h);c.fillStyle='rgba(90,55,25,.85)';c.fillRect(i*2,y0+h*(.1+.8*f)-h*.03,2,h*.06);c.fillRect(i*2,y0+h*(.9-.8*f)-h*.03,2,h*.06);if(f%.25<.02){c.fillStyle='rgba(0,0,0,.18)';c.fillRect(i*2,y0,2,h)}if(hf%7==0&&lo>.3&&lo<.7){c.fillStyle=FL[hf%4];c.fillRect(i*2,y0+h*(.25+(hf>>4)%50/100),2,Math.max(2,h*.05))}}
+ const gx=G.gx+.5-G.x,gy=G.gy+.5-G.y,gd=Math.hypot(gx,gy);let an=Math.atan2(gy,gx)-ang;an=Math.atan2(Math.sin(an),Math.cos(an));
+ if(Math.abs(an)<fov/2+.15&&gd<5){const dd=gd*Math.cos(an),xp=(.5+Math.tan(an)/(2*Math.tan(fov/2)))*W,ci=Math.min(cols-1,Math.max(0,Math.floor(xp/2)));
+  if(zb[ci]>dd-.3){const z=H/dd*.5,yy=hz+z*.3,rg=c.createRadialGradient(xp,yy-z*.3,2,xp,yy-z*.3,z);rg.addColorStop(0,'rgba(255,230,120,.9)');rg.addColorStop(1,'rgba(255,230,120,0)');c.fillStyle=rg;c.fillRect(xp-z,yy-z*1.3,z*2,z*2);
+   c.font=z+'px serif';c.textAlign='center';c.fillText('🏆',xp,yy);c.font=z*.5+'px serif';c.fillText('🌸',xp-z*.6,yy);c.fillText('🌼',xp+z*.6,yy)}}
+ if(S.mini){const m=$('#mm'),T=g.length,cs=6;m.width=m.height=T*cs;const x=m.getContext('2d');g.forEach((r,y)=>r.forEach((v,xx)=>{x.fillStyle=v?'#2e7d32':'#e8dcb0';x.fillRect(xx*cs,y*cs,cs,cs)}));
+  x.fillStyle='#ffb703';x.fillRect(G.gx*cs,G.gy*cs,cs,cs);x.fillStyle='#e11d48';x.beginPath();x.arc(G.x*cs,G.y*cs,cs/2,0,7);x.fill()}}
+</script></body></html>
